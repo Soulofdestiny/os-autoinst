@@ -611,15 +611,24 @@ sub get_required_var {
 
 =head2 set_var
 
-  set_var($variable, $value);
+  set_var($variable, $value [, reload_needles => 1] );
 
 Set test variable C<$variable> to value C<$value>.
+
+Specify a true value for the C<reload_needles> flag to trigger a reloading 
+of needles in the backend and call the cleanup handler with the new variables 
+to make sure that possibly unselected needles are now taken into account
+(useful if you change scenarios during the test run)
 
 =cut
 
 sub set_var {
-    my ($var, $val) = @_;
+    my ($var, $val, %args) = @_;
     $bmwqemu::vars{$var} = $val;
+    if ($args{reload_needles}) {
+        bmwqemu::save_vars();
+        query_isotovideo('backend_reload_needles', {});
+    }
     return;
 }
 
@@ -747,7 +756,7 @@ sub wait_serial {
 
 =head2 x11_start_program
 
-    x11_start_program($program[, $timeout, $options]);
+    x11_start_program($program[, @args]);
 
 Start C<$program> in graphical desktop environment.
 
@@ -756,9 +765,9 @@ I<The implementation is distribution specific and not always available.>
 =cut
 
 sub x11_start_program {
-    my ($program, $timeout, $options) = @_;
-    bmwqemu::log_call(timeout => $timeout, options => $options);
-    return $distri->x11_start_program($program, $timeout, $options);
+    my ($program, @args) = @_;
+    bmwqemu::log_call(program => $program, @args);
+    return $distri->x11_start_program($program, @args);
 }
 
 sub _handle_script_run_ret {
